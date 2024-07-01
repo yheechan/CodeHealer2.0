@@ -1,0 +1,3 @@
+private boolean isMockOrSpy(Object instance){
+ rank2fixstart   return mockUtil.isMock(instance) || mockUtil.isSpy(instance); rank2fixend 
+}

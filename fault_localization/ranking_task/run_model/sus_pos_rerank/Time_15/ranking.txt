@@ -1,0 +1,7 @@
+org.joda.time.field.FieldUtils@140 0.5792391896247864
+org.joda.time.field.FieldUtils@138 0.49808287620544434
+org.joda.time.field.FieldUtils@142 0.4757845997810364
+org.joda.time.field.FieldUtils@136 0.41153889894485474
+org.joda.time.field.FieldUtils@145 0.37588003277778625
+org.joda.time.field.FieldUtils@148 0.3524809181690216
+org.joda.time.field.FieldUtils@144 0.3269413709640503

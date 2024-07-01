@@ -1,0 +1,3 @@
+@Deprecated public void addValue(Object v){
+ rank2fixstart   addValue((Comparable<?>)v); rank2fixend 
+}
