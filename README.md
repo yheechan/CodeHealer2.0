@@ -1,5 +1,5 @@
-# CodeFixer
-## [CodeFixer]Context-based Transfer Learning for Structuring Fault Localization and Program Repair Automation
+# CodeHealer
+## [CodeHealer]Context-based Transfer Learning for Structuring Fault Localization and Program Repair Automation
 ![The overview of CodeHealer to perform fault localization and automated program repair.\label{step}](./framework.png) 
 **Requirements:**
 1. **Java 1.7**
