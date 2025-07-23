@@ -5,6 +5,8 @@ import torch
 import time
 import pickle
 import random
+import dotenv
+import shutil
 from model.model_semantic_spec_mutation import MLP
 
 
@@ -63,15 +65,71 @@ def co_teaching_loss(model1_loss, model2_loss, rt):
 
 
 if __name__ == "__main__":
-    task_id = sys.argv[1]
-    root = "data/{}/".format(task_id)
+    if len(sys.argv) != 5:
+        print("Usage: python3 train.py <experiment_label> <repeat> <method> <task_id>")
+        sys.exit(1)
+    
+    dotenv.load_dotenv()
 
-    train_x_pos = load_from_file(root + 'train/x_pos.pkl')
-    train_x_neg = load_from_file(root + 'train/x_neg.pkl')
-    val_x_pos = load_from_file(root + 'val/x_pos.pkl')
-    val_x_neg = load_from_file(root + 'val/x_neg.pkl')
-    test_x_data = load_from_file(root + 'test/x.pkl')
-    test_y_data = load_from_file(root + 'test/y.pkl')
+    experiment_label = sys.argv[1]
+    repeat = sys.argv[2]
+    method = sys.argv[3]
+    task_id = sys.argv[4]
+
+    print(f"Experiment Label: {experiment_label}")
+    print(f"Repeat: {repeat}")
+    print(f"Method: {method}")
+    print(f"Task ID: {task_id}")
+
+    RESEARCH_DATA_DIR = os.getenv("RESEARCH_DATA")
+    if not RESEARCH_DATA_DIR:
+        print("Please set the RESEARCH_DATA_DIR environment variable.")
+        sys.exit(1)
+
+    # Get statements path and faulty statements path
+    statements_path = os.path.join(RESEARCH_DATA_DIR, experiment_label, "postprocessed_dataset", "statement_info", "statements.pkl")
+    faulty_statements_path = os.path.join(RESEARCH_DATA_DIR, experiment_label, "postprocessed_dataset", "statement_info", "faulty_statement_set.pkl")
+    if not os.path.exists(statements_path) or not os.path.exists(faulty_statements_path):
+        print("Statements or faulty statements file not found.")
+        sys.exit(1)
+    if not os.path.exists(faulty_statements_path):
+        print("Faulty statements file not found: {}".format(faulty_statements_path))
+        sys.exit(1)
+    
+    # Make DLFL results directory
+    dlfl_out_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", repeat)
+    if not os.path.exists(dlfl_out_base_dir):
+        os.makedirs(dlfl_out_base_dir)
+
+    test_root_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "postprocessed_dataset", repeat, "test_dataset", f"group_{task_id}")
+    if method == "test_dataset":
+        train_root_dir = test_root_dir
+        output_base_dir = os.path.join(dlfl_out_base_dir, "test_dataset")
+        sus_pos_rerank_dir = os.path.join(dlfl_out_base_dir, "test_dataset", "sus_pos_rerank")
+    else:
+        train_root_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "postprocessed_dataset", repeat, "methods", method, f"group_{task_id}")
+        output_base_dir = os.path.join(dlfl_out_base_dir, "methods", method)
+        sus_pos_rerank_dir = os.path.join(dlfl_out_base_dir, "methods", method, "test_dataset", "sus_pos_rerank")
+
+    # Make sure the results directory exists
+    models_dir = os.path.join(output_base_dir, "saved_models")
+    if not os.path.exists(models_dir):
+        os.makedirs(models_dir)
+    
+    results_dir = os.path.join(output_base_dir, "results")
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+
+    if not os.path.exists(sus_pos_rerank_dir):
+        os.makedirs(sus_pos_rerank_dir)
+
+    # Load data
+    train_x_pos = load_from_file(train_root_dir + '/train/x_pos.pkl')
+    train_x_neg = load_from_file(train_root_dir + '/train/x_neg.pkl')
+    val_x_pos = load_from_file(train_root_dir + '/val/x_pos.pkl')
+    val_x_neg = load_from_file(train_root_dir + '/val/x_neg.pkl')
+    test_x_data = load_from_file(test_root_dir + '/test/x.pkl')
+    test_y_data = load_from_file(test_root_dir + '/test/y.pkl')
 
     EPOCHS = 40
     BATCH_SIZE = 64
@@ -182,8 +240,14 @@ if __name__ == "__main__":
         val_loss_.append(total_loss / total)
 
         if val_loss_[-1] < best_result:
-            torch.save(model.state_dict(), "./model_save/model_params_{}.pkl".format(task_id))
-            torch.save(model, "./model_save/model_{}.pkl".format(task_id))
+            model_path = os.path.join(models_dir, "model_params_{}.pkl".format(task_id))
+            model_d_path = os.path.join(models_dir, "model_params_d_{}.pkl".format(task_id))
+            if os.path.exists(model_path):
+                os.remove(model_path)
+            if os.path.exists(model_d_path):
+                os.remove(model_d_path)
+            torch.save(model.state_dict(), model_path)
+            torch.save(model_d.state_dict(), model_d_path)
             best_result = val_loss_[-1]
             print("Saving model: epoch_{} ".format(epoch + 1) + "=" * 20)
 
@@ -192,13 +256,24 @@ if __name__ == "__main__":
               % (epoch + 1, EPOCHS, train_loss_[epoch], val_loss_[epoch], end_time - start_time))
 
     # test phase
-    model.load_state_dict(torch.load("./model_save/model_params_{}.pkl".format(task_id)))
+    model_path = os.path.join(models_dir, "model_params_{}.pkl".format(task_id))
+    if not os.path.exists(model_path):
+        print("Model not found: {}".format(model_path))
+        sys.exit(1)
+    model.load_state_dict(torch.load(model_path))
     model.eval()
-    with open("../../binary_classification/d4j_data/statements.pkl", "rb") as file:
+
+    with open(statements_path, "rb") as file:
         statements = pickle.load(file)
-    with open("../faulty_statement_set.pkl", "rb") as file:
+    
+    with open(faulty_statements_path, "rb") as file:
         faulty_statements = pickle.load(file)
-    with open("./result/{}.txt".format(task_id), "w") as result_file:
+    
+    results_txt = os.path.join(results_dir, "result_{}.txt".format(task_id))
+    if os.path.exists(results_txt):
+        os.remove(results_txt)
+
+    with open(results_txt, "w") as result_file:
         for version in test_x_data:
             result_file.write("==={}\n".format(version))
             version_x_data = test_x_data[version]
@@ -225,10 +300,12 @@ if __name__ == "__main__":
             sorted_sus_list = sorted(sus_pos_rerank_dict.items(), key=lambda x: x[1], reverse=True)
 
             # output new suspicious file generated by our model
-            out_suspicious_dir = "./sus_pos_rerank/{}/".format(version)
-            if not os.path.exists(out_suspicious_dir):
-                os.makedirs(out_suspicious_dir)
-            with open(os.path.join(out_suspicious_dir, "ranking.txt"), "w") as file:
+            out_susp_dir = os.path.join(sus_pos_rerank_dir, version)
+            if os.path.exists(out_susp_dir):
+                shutil.rmtree(out_susp_dir)
+            os.makedirs(out_susp_dir)
+
+            with open(os.path.join(out_susp_dir, "ranking.txt"), "w") as file:
                 for (line, score) in sorted_sus_list:
                     file.write("{} {}\n".format(line, score))
 
