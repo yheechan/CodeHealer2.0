@@ -66,7 +66,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Make DLFL results directory
-    dlfl_out_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", repeat)
+    dlfl_out_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", "experiment_raw_results", repeat)
     if not os.path.exists(dlfl_out_base_dir):
         os.makedirs(dlfl_out_base_dir)
 
