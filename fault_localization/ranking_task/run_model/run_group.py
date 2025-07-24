@@ -38,8 +38,8 @@ def parse_model_output_file(results_dir):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: python3 train.py <experiment_label> <repeat> <method> <feature_type>")
+    if len(sys.argv) < 5:
+        print("Usage: python3 run_group.py <experiment_label> <repeat> <method> <feature_type> <project_list:>")
         sys.exit(1)
     
     dotenv.load_dotenv()
@@ -47,6 +47,7 @@ if __name__ == "__main__":
     repeat = sys.argv[2]
     method = sys.argv[3]
     feature_type = int(sys.argv[4])
+    projects_list = sys.argv[5:]
 
     print(f"Experiment Label: {experiment_label}")
     print(f"Repeat: {repeat}")
@@ -95,7 +96,7 @@ if __name__ == "__main__":
     first_position_total = []
 
     print("\nStatistics for each project.")
-    projects = ["Lang"]
+    projects = projects_list
     final_results = {}
     for project in projects:
         print("=" * 20)
