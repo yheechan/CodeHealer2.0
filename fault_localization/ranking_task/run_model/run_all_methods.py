@@ -11,12 +11,13 @@ for mid in range(1, 11):
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 3:
-        print("Usage: python3 run_all_methods.py <experiment_label> <repeat>")
+    if len(sys.argv) != 4:
+        print("Usage: python3 run_all_methods.py <experiment_label> <repeat_range> <feature_type>")
         sys.exit(1)
 
     experiment_label = sys.argv[1]
     repeat_range = int(sys.argv[2])
+    feature_type = int(sys.argv[3])
 
     # python3 run_group <experiment_label> <repeat> <method>
     # Implement a code that run all methods in parallel with maximum 4 batches
@@ -30,9 +31,9 @@ if __name__ == "__main__":
         futures = []
         for method in METHODS:
             for rid in range(1, repeat_range + 1):
-                task = (experiment_label, f"repeat_{rid}", method)
+                task = (experiment_label, f"repeat_{rid}", method, feature_type)
                 futures.append(executor.submit(
-                    os.system, f"python3 run_group.py {task[0]} {task[1]} {task[2]} > /dev/null 2>&1"
+                    os.system, f"python3 run_group.py {task[0]} {task[1]} {task[2]} {task[3]} > /dev/null 2>&1"
                 ))
 
         for future in concurrent.futures.as_completed(futures):

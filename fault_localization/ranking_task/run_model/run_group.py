@@ -38,14 +38,15 @@ def parse_model_output_file(results_dir):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Usage: python3 run_group.py <experiment_label> <repeat> <method>")
+    if len(sys.argv) != 5:
+        print("Usage: python3 train.py <experiment_label> <repeat> <method> <feature_type>")
         sys.exit(1)
     
     dotenv.load_dotenv()
     experiment_label = sys.argv[1]
     repeat = sys.argv[2]
     method = sys.argv[3]
+    feature_type = int(sys.argv[4])
 
     print(f"Experiment Label: {experiment_label}")
     print(f"Repeat: {repeat}")
@@ -54,8 +55,8 @@ if __name__ == "__main__":
     #10-fold cross-validation training and testing
     train_start_time = time.time()
     for group_index in range(1, 11):
-        status = os.system("python3 train.py {} {} {} {} > /dev/null 2>&1".format(
-            experiment_label, repeat, method, group_index
+        status = os.system("python3 train.py {} {} {} {} {} > /dev/null 2>&1".format(
+            experiment_label, repeat, method, feature_type, group_index
         ))
         assert status == 0
     train_time_taken_seconds = time.time() - train_start_time
@@ -66,7 +67,14 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Make DLFL results directory
-    dlfl_out_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", "experiment_raw_results", repeat)
+    if feature_type == 0:
+        exp_dir_name = "experiment_raw_results"
+    elif feature_type == 1:
+        exp_dir_name = "experiment_raw_results_sbfl"
+    elif feature_type == 2:
+        exp_dir_name = "experiment_raw_results_mbfl"
+
+    dlfl_out_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", exp_dir_name, repeat)
     if not os.path.exists(dlfl_out_base_dir):
         os.makedirs(dlfl_out_base_dir)
 

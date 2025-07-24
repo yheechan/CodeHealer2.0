@@ -65,8 +65,8 @@ def co_teaching_loss(model1_loss, model2_loss, rt):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: python3 train.py <experiment_label> <repeat> <method> <task_id>")
+    if len(sys.argv) != 6:
+        print("Usage: python3 train.py <experiment_label> <repeat> <method> <feature_type> <task_id>")
         sys.exit(1)
     
     dotenv.load_dotenv()
@@ -74,7 +74,8 @@ if __name__ == "__main__":
     experiment_label = sys.argv[1]
     repeat = sys.argv[2]
     method = sys.argv[3]
-    task_id = sys.argv[4]
+    feature_type = int(sys.argv[4])
+    task_id = sys.argv[5]
 
     print(f"Experiment Label: {experiment_label}")
     print(f"Repeat: {repeat}")
@@ -97,7 +98,14 @@ if __name__ == "__main__":
         sys.exit(1)
     
     # Make DLFL results directory
-    dlfl_out_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", "experiment_raw_results", repeat)
+    if feature_type == 0:
+        exp_dir_name = "experiment_raw_results"
+    elif feature_type == 1:
+        exp_dir_name = "experiment_raw_results_sbfl"
+    elif feature_type == 2:
+        exp_dir_name = "experiment_raw_results_mbfl"
+
+    dlfl_out_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", exp_dir_name, repeat)
     if not os.path.exists(dlfl_out_base_dir):
         os.makedirs(dlfl_out_base_dir)
 
@@ -136,7 +144,7 @@ if __name__ == "__main__":
     t = 0.005
     USE_GPU = True
 
-    model = MLP()
+    model = MLP(feature_type=feature_type)
 
     if USE_GPU:
         model.cuda()
@@ -151,7 +159,7 @@ if __name__ == "__main__":
     best_result = 1e3
 
     # double co-teaching
-    model_d = MLP()
+    model_d = MLP(feature_type=feature_type)
     if USE_GPU:
         model_d.cuda()
     optimizer_d = torch.optim.Adam(model_d.parameters(), lr=0.001, weight_decay=1e-4)
