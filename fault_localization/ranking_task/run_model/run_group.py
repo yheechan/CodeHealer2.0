@@ -5,10 +5,10 @@ import json
 import time
 
 
-def parse_model_output_file(results_dir):
+def parse_model_output_file(results_dir, repeat_range):
     total_result = []
     version_list = []
-    for group_index in range(1, 11):
+    for group_index in range(1, repeat_range+1):
         txt_file = os.path.join(results_dir, f"result_{group_index}.txt")
         with open(txt_file, "r") as file:
             content = file.readlines()
@@ -38,8 +38,8 @@ def parse_model_output_file(results_dir):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
-        print("Usage: python3 run_group.py <experiment_label> <repeat> <method> <feature_type> <project_list:>")
+    if len(sys.argv) < 6:
+        print("Usage: python3 run_group.py <experiment_label> <repeat> <method> <feature_type> <repeat_range> <project_list:>")
         sys.exit(1)
     
     dotenv.load_dotenv()
@@ -47,7 +47,8 @@ if __name__ == "__main__":
     repeat = sys.argv[2]
     method = sys.argv[3]
     feature_type = int(sys.argv[4])
-    projects_list = sys.argv[5:]
+    repeat_range = int(sys.argv[5])
+    projects_list = sys.argv[6:]
 
     print(f"Experiment Label: {experiment_label}")
     print(f"Repeat: {repeat}")
@@ -86,7 +87,7 @@ if __name__ == "__main__":
     
     results_dir = os.path.join(output_base_dir, "results")
 
-    total_result, version_list = parse_model_output_file(results_dir)
+    total_result, version_list = parse_model_output_file(results_dir, repeat_range)
 
     top1_total = 0
     top3_total = 0
