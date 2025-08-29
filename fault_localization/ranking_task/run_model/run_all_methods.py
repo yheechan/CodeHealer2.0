@@ -15,6 +15,7 @@ EXP_CONFIG = json.load(open(dot_experiment_config_file, "r"))
 
 REPEAT_RANGE = EXP_CONFIG["num_repeats"]
 TCS_REDUCTION = EXP_CONFIG["tcs_reduction"]
+RESEARCH_DATA_DIR = os.getenv("RESEARCH_DATA")
 
 for line_cnt in EXP_CONFIG["target_lines"]:
     for mut_cnt in EXP_CONFIG["mutation_cnt"]:
@@ -22,6 +23,13 @@ for line_cnt in EXP_CONFIG["target_lines"]:
         METHODS.append(method_key)
 
 if __name__ == "__main__":
+
+    print(json.dumps(EXP_CONFIG, indent=4))
+    print("# of methods:", len(METHODS))
+    # res = input("Do you want to continue? (y/n): ")
+    # if res.lower() != 'y':
+    #     print("Exiting without running tasks.")
+    #     sys.exit(0)
 
     if len(sys.argv) < 4:
         print("Usage: python3 run_all_methods.py <experiment_label> <feature_type> <project1> <project2> ...")
@@ -33,6 +41,22 @@ if __name__ == "__main__":
     feature_type = int(sys.argv[2])
     projects_list = sys.argv[3:]
     project_list = " ".join(projects_list)
+
+    # Make DLFL results directory
+    if feature_type == 0:
+        exp_dir_name = "experiment_raw_results"
+    elif feature_type == 1:
+        exp_dir_name = "experiment_raw_results_OnlySBFL"
+    elif feature_type == 2:
+        exp_dir_name = "experiment_raw_results_OnlyMBFL"
+    elif feature_type == 3:
+        exp_dir_name = "experiment_raw_results_OnlyST"
+    elif feature_type == 4:
+        exp_dir_name = "experiment_raw_results_NoSBFL"
+    elif feature_type == 5:
+        exp_dir_name = "experiment_raw_results_NoMBFL"
+    elif feature_type == 6:
+        exp_dir_name = "experiment_raw_results_NoST"
 
     # python3 run_group <experiment_label> <repeat> <method>
     # Implement a code that run all methods in parallel with maximum 4 batches
@@ -46,6 +70,14 @@ if __name__ == "__main__":
         futures = []
         for method in METHODS:
             for rid in range(1, repeat_range + 1):
+                repeat_name = f"repeat_{rid}"
+                if method == "test_dataset":
+                    output_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", exp_dir_name, repeat_name, "test_dataset")
+                else:
+                    output_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", exp_dir_name, repeat_name, "methods", method)
+                if os.path.exists(output_base_dir):
+                    print(f"Skipping existing output directory: {output_base_dir}")
+                    continue
                 task = (experiment_label, f"repeat_{rid}", method, feature_type, repeat_range, project_list)
                 futures.append(executor.submit(
                     os.system, f"python3 run_group.py {task[0]} {task[1]} {task[2]} {task[3]} {task[4]} {task[5]} > /dev/null 2>&1"

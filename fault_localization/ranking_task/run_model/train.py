@@ -101,9 +101,17 @@ if __name__ == "__main__":
     if feature_type == 0:
         exp_dir_name = "experiment_raw_results"
     elif feature_type == 1:
-        exp_dir_name = "experiment_raw_results_sbfl"
+        exp_dir_name = "experiment_raw_results_OnlySBFL"
     elif feature_type == 2:
-        exp_dir_name = "experiment_raw_results_mbfl"
+        exp_dir_name = "experiment_raw_results_OnlyMBFL"
+    elif feature_type == 3:
+        exp_dir_name = "experiment_raw_results_OnlyST"
+    elif feature_type == 4:
+        exp_dir_name = "experiment_raw_results_NoSBFL"
+    elif feature_type == 5:
+        exp_dir_name = "experiment_raw_results_NoMBFL"
+    elif feature_type == 6:
+        exp_dir_name = "experiment_raw_results_NoST"
 
     dlfl_out_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", exp_dir_name, repeat)
     if not os.path.exists(dlfl_out_base_dir):
