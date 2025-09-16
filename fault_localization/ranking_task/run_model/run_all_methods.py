@@ -44,19 +44,19 @@ if __name__ == "__main__":
 
     # Make DLFL results directory
     if feature_type == 0:
-        exp_dir_name = "experiment_raw_results"
-    elif feature_type == 1:
         exp_dir_name = "experiment_raw_results_OnlySBFL"
-    elif feature_type == 2:
+    elif feature_type == 1:
         exp_dir_name = "experiment_raw_results_OnlyMBFL"
-    elif feature_type == 3:
+    elif feature_type == 2:
         exp_dir_name = "experiment_raw_results_OnlyST"
-    elif feature_type == 4:
+    elif feature_type == 3:
         exp_dir_name = "experiment_raw_results_NoSBFL"
-    elif feature_type == 5:
+    elif feature_type == 4:
         exp_dir_name = "experiment_raw_results_NoMBFL"
-    elif feature_type == 6:
+    elif feature_type == 5:
         exp_dir_name = "experiment_raw_results_NoST"
+    elif feature_type == 6:
+        exp_dir_name = "experiment_raw_results_All"
 
     # python3 run_group <experiment_label> <repeat> <method>
     # Implement a code that run all methods in parallel with maximum 4 batches
@@ -80,7 +80,7 @@ if __name__ == "__main__":
                     continue
                 task = (experiment_label, f"repeat_{rid}", method, feature_type, repeat_range, project_list)
                 futures.append(executor.submit(
-                    os.system, f"python3 run_group.py {task[0]} {task[1]} {task[2]} {task[3]} {task[4]} {task[5]} > /dev/null 2>&1"
+                    os.system, f"python3 run_group.py {task[0]} {task[1]} {task[2]} {task[3]} {10} {task[5]} > /dev/null 2>&1"
                 ))
 
         for future in concurrent.futures.as_completed(futures):

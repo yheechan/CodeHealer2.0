@@ -5,10 +5,10 @@ import json
 import time
 
 
-def parse_model_output_file(results_dir, repeat_range):
+def parse_model_output_file(results_dir, k_fold_num):
     total_result = []
     version_list = []
-    for group_index in range(1, repeat_range+1):
+    for group_index in range(1, k_fold_num+1):
         txt_file = os.path.join(results_dir, f"result_{group_index}.txt")
         with open(txt_file, "r") as file:
             content = file.readlines()
@@ -39,7 +39,7 @@ def parse_model_output_file(results_dir, repeat_range):
 
 if __name__ == "__main__":
     if len(sys.argv) < 6:
-        print("Usage: python3 run_group.py <experiment_label> <repeat> <method> <feature_type> <repeat_range> <project_list:>")
+        print("Usage: python3 run_group.py <experiment_label> <repeat> <method> <feature_type> <k-fold-num> <project_list:>")
         sys.exit(1)
     
     dotenv.load_dotenv()
@@ -47,14 +47,14 @@ if __name__ == "__main__":
     repeat = sys.argv[2]
     method = sys.argv[3]
     feature_type = int(sys.argv[4])
-    repeat_range = int(sys.argv[5])
+    k_fold_num = int(sys.argv[5])
     projects_list = sys.argv[6:]
 
     print(f"Experiment Label: {experiment_label}")
     print(f"Repeat: {repeat}")
     print(f"Method: {method}")
 
-    #10-fold cross-validation training and testing
+    # 10-fold cross-validation training and testing
     train_start_time = time.time()
     for group_index in range(1, 11):
         status = os.system("python3 train.py {} {} {} {} {} > /dev/null 2>&1".format(
@@ -70,19 +70,19 @@ if __name__ == "__main__":
     
     # Make DLFL results directory
     if feature_type == 0:
-        exp_dir_name = "experiment_raw_results"
-    elif feature_type == 1:
         exp_dir_name = "experiment_raw_results_OnlySBFL"
-    elif feature_type == 2:
+    elif feature_type == 1:
         exp_dir_name = "experiment_raw_results_OnlyMBFL"
-    elif feature_type == 3:
+    elif feature_type == 2:
         exp_dir_name = "experiment_raw_results_OnlyST"
-    elif feature_type == 4:
+    elif feature_type == 3:
         exp_dir_name = "experiment_raw_results_NoSBFL"
-    elif feature_type == 5:
+    elif feature_type == 4:
         exp_dir_name = "experiment_raw_results_NoMBFL"
-    elif feature_type == 6:
+    elif feature_type == 5:
         exp_dir_name = "experiment_raw_results_NoST"
+    elif feature_type == 6:
+        exp_dir_name = "experiment_raw_results_All"
 
     dlfl_out_base_dir = os.path.join(RESEARCH_DATA_DIR, experiment_label, "dlfl_out", exp_dir_name, repeat)
     if not os.path.exists(dlfl_out_base_dir):
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     
     results_dir = os.path.join(output_base_dir, "results")
 
-    total_result, version_list = parse_model_output_file(results_dir, repeat_range)
+    total_result, version_list = parse_model_output_file(results_dir, k_fold_num)
 
     top1_total = 0
     top3_total = 0
@@ -117,6 +117,8 @@ if __name__ == "__main__":
         top10 = 0
         all_position = []
         first_position = []
+
+        print(f"{project}: {len(version_list)} versions, {len(total_result)} results")
 
         for i, version in enumerate(version_list):
             if not version.startswith(project):
